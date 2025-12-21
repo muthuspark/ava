@@ -1,70 +1,75 @@
 digraph Ava {
     rankdir=TB
-    node [shape=box, style="rounded,filled", fontname="JetBrains Mono"]
-    edge [fontname="JetBrains Mono", fontsize=10]
+    fontname="JetBrains Mono, Courier New, monospace"
+    compound=true
+    
+    // Global Styles
+    node [shape=box, style="bold", fontname="Helvetica,Arial,sans-serif", color=black, fillcolor=white]
+    edge [fontname="JetBrains Mono", fontsize=10, color=black]
+    graph [bgcolor=white, fontname="JetBrains Mono", labeljust="l"]
 
-    // Styling
-    graph [bgcolor="transparent", fontname="JetBrains Mono"]
 
-    // User layer
-    subgraph cluster_user {
-        label="User"
-        style=dashed
-        color="#64748b"
-        fontcolor="#64748b"
-
-        mic [label="Microphone", fillcolor="#22c55e20", color="#22c55e"]
-        speaker [label="Speaker", fillcolor="#ec489920", color="#ec4899"]
-    }
-
-    // UI layer
-    subgraph cluster_ui {
-        label="UI Components"
-        style=dashed
-        color="#64748b"
-        fontcolor="#64748b"
-
-        app [label="App.vue", fillcolor="#6366f120", color="#6366f1"]
-        visualizer [label="WaveformVisualizer", fillcolor="#6366f120", color="#6366f1"]
-        about [label="AboutPopup", fillcolor="#6366f120", color="#6366f1"]
-    }
-
-    // Composables layer
-    subgraph cluster_composables {
-        label="Composables"
-        style=dashed
-        color="#64748b"
-        fontcolor="#64748b"
-
-        conversation [label="useConversation", fillcolor="#a855f720", color="#a855f7"]
-        whisper [label="useWhisper", fillcolor="#22c55e20", color="#22c55e"]
-        wllama [label="useWllama", fillcolor="#f59e0b20", color="#f59e0b"]
-        tts [label="useSpeechSynthesis", fillcolor="#ec489920", color="#ec4899"]
-        audioViz [label="useAudioVisualizer", fillcolor="#22d3ee20", color="#22d3ee"]
-    }
-
-    // WASM layer
-    subgraph cluster_wasm {
-        label="WebAssembly Models"
-        style=dashed
-        color="#64748b"
-        fontcolor="#64748b"
-
-        whisperModel [label="Whisper tiny-en\n(~31MB)", fillcolor="#22c55e20", color="#22c55e"]
-        qwenModel [label="Qwen 0.5B\n(~350MB)", fillcolor="#f59e0b20", color="#f59e0b"]
-    }
-
-    // Browser API
     subgraph cluster_browser {
-        label="Browser APIs"
-        style=dashed
-        color="#64748b"
-        fontcolor="#64748b"
-
-        webAudio [label="Web Audio API", fillcolor="#22d3ee20", color="#22d3ee"]
-        speechSynth [label="SpeechSynthesis API", fillcolor="#ec489920", color="#ec4899"]
+        label = "Vue + WASM Voice AI Stack";
+        style=filled;
+        color=lightgrey;
+        node [style=filled, fillcolor=white];
+        // User layer
+        subgraph cluster_user {
+            label="[ User ]"
+            style=dashed
+            color=black
+            
+            mic [label="Microphone"]
+            speaker [label="Speaker"]
+        }
+    
+        // UI layer
+        subgraph cluster_ui {
+            label="[ UI Components ]"
+            style=dashed
+            color=black
+    
+            app [label="App.vue"]
+            visualizer [label="WaveformVisualizer"]
+            about [label="AboutPopup"]
+        }
+    
+        // Composables layer
+        subgraph cluster_composables {
+            label="[ Composables ]"
+            style=solid
+            penwidth=2
+            color=black
+    
+            conversation [label="useConversation", penwidth=2]
+            whisper [label="useWhisper"]
+            wllama [label="useWllama"]
+            tts [label="useSpeechSynthesis"]
+            audioViz [label="useAudioVisualizer"]
+        }
+    
+        // WASM layer
+        subgraph cluster_wasm {
+            label="[ WebAssembly Models ]"
+            style=dashed
+            color=black
+    
+            whisperModel [label="Whisper tiny-en\n(~31MB)"]
+            qwenModel [label="Qwen 0.5B\n(~350MB)"]
+        }
+    
+        // Browser API
+        subgraph cluster_browser {
+            label="[ Browser APIs ]"
+            style=dotted
+            color=black
+    
+            webAudio [label="Web Audio API"]
+            speechSynth [label="SpeechSynthesis API"]
+        }
+        
     }
-
     // Data flow
     mic -> whisper [label="audio"]
     whisper -> whisperModel [label="WASM"]

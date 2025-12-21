@@ -101,7 +101,3 @@ npm run preview  # Preview production build
 ## License
 
 MIT
-
-## Author
-
-Muthukrishnan
