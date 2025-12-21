@@ -80,7 +80,7 @@ const stateLabels: Record<string, string> = {
   'listening': 'Echo Active',
   'processing': 'Processing',
   'thinking': 'Cortex Active',
-  'speaking': 'Aria Active',
+  'speaking': 'Ava Active',
   'loading': 'Initializing'
 }
 
