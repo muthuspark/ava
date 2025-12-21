@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
-import { useSpeechRecognition } from './composables/useSpeechRecognition'
+import { useWhisper } from './composables/useWhisper'
 import { useSpeechSynthesis } from './composables/useSpeechSynthesis'
 import { useWllama } from './composables/useWllama'
 import { useAudioVisualizer } from './composables/useAudioVisualizer'
@@ -12,14 +12,17 @@ const showAbout = ref(false)
 
 const {
   isSupported,
+  isLoading: isWhisperLoading,
+  isModelLoaded: isWhisperLoaded,
   isListening,
   transcript,
-  interimTranscript,
+  loadProgress: whisperLoadProgress,
   error: speechError,
+  loadModel: loadWhisperModel,
   start: startListening,
   stop: stopListening,
   clear: clearTranscript
-} = useSpeechRecognition()
+} = useWhisper()
 
 const {
   isSupported: isTTSSupported,
@@ -41,9 +44,9 @@ const {
   generateStreaming
 } = useWllama()
 
-// Loading state (only LLM now, TTS is built-in)
-const isModelLoading = computed(() => isLLMLoading.value)
-const isModelLoaded = computed(() => isLLMLoaded.value)
+// Loading state (both Whisper and LLM)
+const isModelLoading = computed(() => isWhisperLoading.value || isLLMLoading.value)
+const isModelLoaded = computed(() => isWhisperLoaded.value && isLLMLoaded.value)
 
 const {
   frequencyData,
@@ -55,7 +58,7 @@ const {
 
 // Current state for UI
 const currentState = computed(() => {
-  if (isLLMLoading.value) return 'loading'
+  if (isWhisperLoading.value || isLLMLoading.value) return 'loading'
   if (isSpeaking.value) return 'speaking'
   if (isGenerating.value) return 'thinking'
   if (isProcessing.value) return 'processing'
@@ -138,41 +141,32 @@ watch(isSpeaking, (speaking) => {
   }
 })
 
-// Silence detection threshold
-const SILENCE_THRESHOLD_MS = 1000
-
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
-
-watch([transcript, interimTranscript], ([text]) => {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer)
-    debounceTimer = null
+// Watch for new transcriptions from Whisper
+watch(transcript, async (text) => {
+  if (!text || !isModelLoaded.value || isGenerating.value || isSpeaking.value || !isConversationActive.value) {
+    return
   }
+
+  isProcessing.value = true
+  stopListening()
+  stopVisualizer()
+
+  // Stream LLM response and queue sentences for TTS
+  if (isTTSSupported.value) {
+    await generateStreaming(text, (sentence: string) => {
+      queueSentence(sentence)
+    })
+    await waitForQueue()
+  } else {
+    await generateStreaming(text, () => {})
+  }
+
   isProcessing.value = false
 
-  if (text && isModelLoaded.value && !isGenerating.value && !isSpeaking.value && isConversationActive.value) {
-    isProcessing.value = true
-    debounceTimer = setTimeout(async () => {
-      stopListening()
-      stopVisualizer()
-      isProcessing.value = false
-
-      // Stream LLM response and queue sentences for TTS
-      if (isTTSSupported.value) {
-        await generateStreaming(text, (sentence: string) => {
-          queueSentence(sentence)
-        })
-        await waitForQueue()
-      } else {
-        await generateStreaming(text, () => {})
-      }
-
-      if (isConversationActive.value) {
-        clearTranscript()
-        startListening()
-        startVisualizer()
-      }
-    }, SILENCE_THRESHOLD_MS)
+  if (isConversationActive.value) {
+    clearTranscript()
+    startListening()
+    startVisualizer()
   }
 })
 
@@ -183,12 +177,8 @@ async function handleToggleConversation() {
     stopSpeaking()
     stopVisualizer()
     stopSimulation()
-    if (debounceTimer) {
-      clearTimeout(debounceTimer)
-      debounceTimer = null
-    }
   } else {
-    // Model already loaded on page load
+    // Models already loaded on page load
     isConversationActive.value = true
     clearTranscript()
     startListening()
@@ -204,8 +194,9 @@ onMounted(async () => {
     drawWaveform()
   }
 
-  // Auto-load model and introduce Ava
-  await loadLLMModel()
+  // Auto-load both models in parallel
+  await Promise.all([loadWhisperModel(), loadLLMModel()])
+
   if (isTTSSupported.value) {
     await speak("Hi, I'm Ava, your AI assistant. Press the button below to start talking to me.")
   }
@@ -233,6 +224,13 @@ onMounted(async () => {
       </div>
 
       <!-- Loading Progress -->
+      <div v-if="isWhisperLoading" class="loading-container">
+        <div class="loading-label">ECHO (Whisper)</div>
+        <div class="loading-bar">
+          <div class="loading-fill" :style="{ width: whisperLoadProgress + '%' }"></div>
+        </div>
+        <span class="loading-text">{{ whisperLoadProgress }}%</span>
+      </div>
       <div v-if="isLLMLoading" class="loading-container">
         <div class="loading-label">CORTEX (Qwen 0.5B)</div>
         <div class="loading-bar">
@@ -245,9 +243,8 @@ onMounted(async () => {
       <div class="panel transcript-panel">
         <div class="panel-content">
           <span v-if="transcript" class="text-primary">{{ transcript }}</span>
-          <span v-if="interimTranscript" class="text-interim">{{ interimTranscript }}</span>
-          <span v-if="!transcript && !interimTranscript" class="text-placeholder">
-            {{ isListening ? '◐ Awaiting voice input...' : '○ Microphone inactive' }}
+          <span v-else class="text-placeholder">
+            {{ isListening ? '◐ Listening...' : '○ Microphone inactive' }}
           </span>
         </div>
       </div>
@@ -276,7 +273,7 @@ onMounted(async () => {
 
       <!-- Browser Support Warning -->
       <p v-if="!isSupported" class="warning">
-        ⚠ Speech recognition unavailable. Use Chrome or Edge.
+        ⚠ Whisper requires SharedArrayBuffer. Use Chrome or Edge with cross-origin isolation.
       </p>
     </main>
 
@@ -309,8 +306,8 @@ onMounted(async () => {
         <p class="about-version">v1.0.0</p>
         <p class="about-desc">Meet Ava, your private AI assistant running entirely in your browser. No servers, no data leaves your device.</p>
         <div class="about-tech">
+          <span>Whisper</span>
           <span>Qwen 0.5B</span>
-          <span>Web Speech API</span>
           <span>WebAssembly</span>
         </div>
         <div class="about-developer">
