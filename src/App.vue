@@ -114,13 +114,13 @@ onMounted(() => {
         <span class="button-icon">
           <span v-if="isModelLoading" class="spinner"></span>
           <span v-else-if="isConversationActive">■</span>
-          <span v-else>▶</span>
+          <span v-else>&#9654;</span>
         </span>
       </button>
     </div>
 
     <!-- About Button -->
-    <button class="about-button" @click="showAbout = true">?</button>
+    <button class="about-button" @click="showAbout = true">About</button>
 
     <!-- About Popup -->
     <AboutPopup :visible="showAbout" @close="showAbout = false" />
