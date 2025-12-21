@@ -145,10 +145,22 @@ export function useConversation() {
   }
 
   async function initialize() {
+    // Request microphone permission early
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // Stop the stream immediately, we just needed permission
+      stream.getTracks().forEach(track => track.stop())
+    } catch (e) {
+      const err = e as Error
+      if (err.name === 'NotAllowedError') {
+        speechError.value = 'Microphone access denied. Please allow microphone permission and reload the page.'
+      }
+    }
+
     // Load both models in parallel
     await Promise.all([loadWhisperModel(), loadLLMModel()])
 
-    // Introduce Ava
+    // Introduce Ava (also triggers TTS/audio permission)
     if (isTTSSupported.value) {
       await speak("Hi, I'm Ava, your AI assistant. Press the button below to start talking to me.")
     }
