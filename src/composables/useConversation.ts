@@ -29,6 +29,7 @@ export const stateLabels: Record<ConversationState, string> = {
 export function useConversation() {
   const isProcessing = ref(false)
   const isConversationActive = ref(false)
+  const hasIntroPlayed = ref(false)
 
   // Whisper (Speech-to-Text)
   const {
@@ -137,6 +138,12 @@ export function useConversation() {
       stopVisualizer()
       stopSimulation()
     } else {
+      // First click triggers TTS permission via intro
+      if (!hasIntroPlayed.value && isTTSSupported.value) {
+        hasIntroPlayed.value = true
+        await speak("Hello! I'm Ava. How can I help you?")
+      }
+
       isConversationActive.value = true
       clearTranscript()
       startListening()
@@ -145,25 +152,8 @@ export function useConversation() {
   }
 
   async function initialize() {
-    // Request microphone permission early
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      // Stop the stream immediately, we just needed permission
-      stream.getTracks().forEach(track => track.stop())
-    } catch (e) {
-      const err = e as Error
-      if (err.name === 'NotAllowedError') {
-        speechError.value = 'Microphone access denied. Please allow microphone permission and reload the page.'
-      }
-    }
-
     // Load both models in parallel
     await Promise.all([loadWhisperModel(), loadLLMModel()])
-
-    // Introduce Ava (also triggers TTS/audio permission)
-    if (isTTSSupported.value) {
-      await speak("Hi, I'm Ava, your AI assistant. Press the button below to start talking to me.")
-    }
   }
 
   return {
