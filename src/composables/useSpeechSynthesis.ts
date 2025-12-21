@@ -55,6 +55,7 @@ export function useSpeechSynthesis() {
 
     utterance.onstart = () => {
       isSpeaking.value = true
+      error.value = null  // Clear any previous errors on successful start
     }
 
     utterance.onend = () => {
@@ -119,6 +120,7 @@ export function useSpeechSynthesis() {
 
       utterance.onstart = () => {
         isSpeaking.value = true
+        error.value = null  // Clear any previous errors on successful start
       }
 
       utterance.onend = () => {
