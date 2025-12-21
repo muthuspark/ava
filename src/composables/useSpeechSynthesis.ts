@@ -11,6 +11,29 @@ export function useSpeechSynthesis() {
   let synth: SpeechSynthesis | null = null
   let onQueueEmpty: (() => void) | null = null
 
+  // Get a valid voice, ensuring it exists in the current voices list
+  function getValidVoice(): SpeechSynthesisVoice | null {
+    if (!synth) return null
+
+    const availableVoices = synth.getVoices()
+    if (availableVoices.length === 0) return null
+
+    // Check if selected voice is still available
+    if (selectedVoice.value) {
+      const found = availableVoices.find(v => v.name === selectedVoice.value!.name)
+      if (found) return found
+    }
+
+    // Fall back to default voice selection
+    return availableVoices.find(v => v.lang === 'en-US' && v.name.toLowerCase().includes('google us english')) ||
+      availableVoices.find(v => v.lang === 'en-GB' && v.name.toLowerCase().includes('female')) ||
+      availableVoices.find(v => v.lang === 'en-US' && v.name.toLowerCase().includes('female')) ||
+      availableVoices.find(v => v.lang === 'en-AU' && v.name.toLowerCase().includes('female')) ||
+      availableVoices.find(v => v.lang === 'en-AU') ||
+      availableVoices.find(v => v.lang.startsWith('en')) ||
+      availableVoices[0]
+  }
+
   onMounted(() => {
     if ('speechSynthesis' in window) {
       isSupported.value = true
@@ -43,11 +66,13 @@ export function useSpeechSynthesis() {
   function queueSentence(text: string): void {
     if (!synth || !isSupported.value || !text.trim()) return
 
+    error.value = null  // Clear error immediately when queueing new speech
     pendingCount.value++
     const utterance = new SpeechSynthesisUtterance(text.trim())
 
-    if (selectedVoice.value) {
-      utterance.voice = selectedVoice.value
+    const voice = getValidVoice()
+    if (voice) {
+      utterance.voice = voice
     }
 
     utterance.rate = 1.15  // Slightly faster for streaming
@@ -105,14 +130,16 @@ export function useSpeechSynthesis() {
         return
       }
 
-      // Cancel any ongoing speech
+      // Cancel any ongoing speech and reset queue
       synth.cancel()
-      pendingCount.value = 0
+      pendingCount.value = 1  // This utterance counts as pending
+      error.value = null  // Clear error immediately to prevent stale errors from canceled utterances
 
       const utterance = new SpeechSynthesisUtterance(text)
 
-      if (selectedVoice.value) {
-        utterance.voice = selectedVoice.value
+      const voice = getValidVoice()
+      if (voice) {
+        utterance.voice = voice
       }
 
       utterance.rate = 1.1
@@ -124,15 +151,19 @@ export function useSpeechSynthesis() {
       }
 
       utterance.onend = () => {
+        pendingCount.value--
         isSpeaking.value = false
         resolve()
       }
 
       utterance.onerror = (event) => {
+        pendingCount.value--
         isSpeaking.value = false
         if (event.error !== 'canceled') {
           if (event.error === 'not-allowed') {
             error.value = 'Audio playback not allowed. Please allow sound permission in browser/system settings.'
+            resolve()
+            return
           } else {
             error.value = `Speech error: ${event.error}`
           }
@@ -141,7 +172,6 @@ export function useSpeechSynthesis() {
           resolve()
         }
       }
-
       synth.speak(utterance)
     })
   }

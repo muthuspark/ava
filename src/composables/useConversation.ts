@@ -29,6 +29,7 @@ export const stateLabels: Record<ConversationState, string> = {
 export function useConversation() {
   const isProcessing = ref(false)
   const isConversationActive = ref(false)
+  const hasPlayedIntro = ref(false)
 
   // Whisper (Speech-to-Text)
   const {
@@ -141,22 +142,18 @@ export function useConversation() {
       clearTranscript()
       startListening()
       startVisualizer()
+
+      // Play intro after mic permission granted (first click only)
+      if (!hasPlayedIntro.value && isTTSSupported.value) {
+        hasPlayedIntro.value = true
+        await speak("Hi, I'm Ava, your AI assistant. Start talking to me.")
+      }
     }
   }
 
   async function initialize() {
     // Load both models in parallel
     await Promise.all([loadWhisperModel(), loadLLMModel()])
-
-    // Introduce Ava after models load
-    if (isTTSSupported.value) {
-      try {
-        await speak("Hi, I'm Ava, your AI assistant. Press the button below to start talking to me.")
-      } catch (e) {
-        // TTS may fail if no user interaction yet - that's ok
-        console.log('TTS intro skipped:', e)
-      }
-    }
   }
 
   return {
