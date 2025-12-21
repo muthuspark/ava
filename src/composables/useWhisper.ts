@@ -54,10 +54,19 @@ export function useWhisper() {
 
     error.value = null
     try {
+      // Request microphone permission first
+      await navigator.mediaDevices.getUserMedia({ audio: true })
       await transcriber.startRecording()
       isListening.value = true
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to start recording'
+      const err = e as Error
+      if (err.name === 'NotAllowedError' || err.message?.includes('not-allowed')) {
+        error.value = 'Microphone access denied. Please allow microphone permission and reload the page.'
+      } else if (err.name === 'NotFoundError') {
+        error.value = 'No microphone found. Please connect a microphone.'
+      } else {
+        error.value = err.message || 'Failed to start recording'
+      }
       isListening.value = false
     }
   }
