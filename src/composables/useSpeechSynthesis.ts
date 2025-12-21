@@ -24,8 +24,8 @@ export function useSpeechSynthesis() {
         // Default to UK English Female voice
         if (!selectedVoice.value && availableVoices.length > 0) {
           selectedVoice.value =
-            availableVoices.find(v => v.lang === 'en-US' && v.name.toLowerCase().includes('female')) ||
-            availableVoices.find(v => v.lang === 'en-US') ||
+            availableVoices.find(v => v.lang === 'en-AU' && v.name.toLowerCase().includes('female')) ||
+            availableVoices.find(v => v.lang === 'en-AU') ||
             availableVoices.find(v => v.lang.startsWith('en')) ||
             availableVoices[0]
         }
