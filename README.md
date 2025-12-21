@@ -2,7 +2,7 @@
 
 A privacy-first AI voice assistant that runs entirely in the browser using WebAssembly. Zero server dependencies—all speech recognition, language model inference, and text-to-speech happen locally on-device.
 
-**[Try the demo →](https://ava.muthu.co)**
+**[Try the demo → https://ava.muthu.co](https://ava.muthu.co)**
 
 ## Architecture
 
