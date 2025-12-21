@@ -49,6 +49,7 @@ export function useConversation() {
   const {
     isSupported: isTTSSupported,
     isSpeaking,
+    error: ttsError,
     speak,
     queueSentence,
     waitForQueue,
@@ -177,6 +178,7 @@ export function useConversation() {
 
     // TTS
     isSpeaking,
+    ttsError,
 
     // Visualizer
     frequencyData,

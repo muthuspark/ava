@@ -23,6 +23,7 @@ const {
   response,
   llmError,
   isSpeaking,
+  ttsError,
   frequencyData,
   toggleConversation,
   initialize
@@ -49,8 +50,8 @@ onMounted(() => {
       </header>
 
       <!-- Errors -->
-      <div v-if="speechError || llmError" class="error-banner">
-        {{ speechError || llmError }}
+      <div v-if="speechError || llmError || ttsError" class="error-banner">
+        {{ speechError || llmError || ttsError }}
       </div>
 
       <!-- Loading Progress -->

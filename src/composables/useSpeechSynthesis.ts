@@ -6,6 +6,7 @@ export function useSpeechSynthesis() {
   const voices = ref<SpeechSynthesisVoice[]>([])
   const selectedVoice = ref<SpeechSynthesisVoice | null>(null)
   const pendingCount = ref(0)
+  const error = ref<string | null>(null)
 
   let synth: SpeechSynthesis | null = null
   let onQueueEmpty: (() => void) | null = null
@@ -70,7 +71,11 @@ export function useSpeechSynthesis() {
         isSpeaking.value = false
       }
       if (event.error !== 'canceled') {
-        console.error('Speech error:', event.error)
+        if (event.error === 'not-allowed') {
+          error.value = 'Audio playback not allowed. Please allow sound permission in browser/system settings.'
+        } else {
+          error.value = `Speech error: ${event.error}`
+        }
       }
     }
 
@@ -121,7 +126,12 @@ export function useSpeechSynthesis() {
       utterance.onerror = (event) => {
         isSpeaking.value = false
         if (event.error !== 'canceled') {
-          reject(new Error(`Speech error: ${event.error}`))
+          if (event.error === 'not-allowed') {
+            error.value = 'Audio playback not allowed. Please allow sound permission in browser/system settings.'
+          } else {
+            error.value = `Speech error: ${event.error}`
+          }
+          reject(new Error(error.value))
         } else {
           resolve()
         }
@@ -150,6 +160,7 @@ export function useSpeechSynthesis() {
     voices,
     selectedVoice,
     pendingCount,
+    error,
     speak,
     queueSentence,
     waitForQueue,
