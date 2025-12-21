@@ -84,6 +84,31 @@ const SENTENCE_BOUNDARY = /[.!?,](?:\s|$)/  // TTS triggers on punctuation
   Cross-Origin-Embedder-Policy: require-corp
   ```
 
+## Permissions
+
+Ava requires the following browser/system permissions:
+
+| Permission | Purpose | Required |
+|------------|---------|----------|
+| Microphone | Voice input via Whisper | Yes |
+| Audio Playback | Text-to-speech output | Yes |
+
+### macOS
+
+1. **System Preferences** → **Security & Privacy** → **Privacy** → **Microphone** → Enable your browser
+2. When prompted by the browser, click **Allow** for microphone access
+3. If audio doesn't play, check **System Preferences** → **Sound** → **Output**
+
+### Windows
+
+1. **Settings** → **Privacy** → **Microphone** → Allow apps to access microphone
+2. Ensure your browser is listed and enabled
+
+### Linux
+
+1. Ensure PulseAudio/PipeWire is running
+2. Grant microphone permission when prompted by the browser
+
 ## Development
 
 ```bash
