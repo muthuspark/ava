@@ -2,7 +2,7 @@ digraph Ava {
     rankdir=TB
     fontname="JetBrains Mono, Courier New, monospace"
     compound=true
-    
+
     // Global Styles
     node [shape=box, style="bold", fontname="Helvetica,Arial,sans-serif", color=black, fillcolor=white]
     edge [fontname="JetBrains Mono", fontsize=10, color=black]
@@ -19,60 +19,63 @@ digraph Ava {
             label="[ User ]"
             style=dashed
             color=black
-            
+
             mic [label="Microphone"]
             speaker [label="Speaker"]
         }
-    
+
         // UI layer
         subgraph cluster_ui {
             label="[ UI Components ]"
             style=dashed
             color=black
-    
+
             app [label="App.vue"]
             visualizer [label="WaveformVisualizer"]
             about [label="AboutPopup"]
         }
-    
+
         // Composables layer
         subgraph cluster_composables {
             label="[ Composables ]"
             style=solid
             penwidth=2
             color=black
-    
+
             conversation [label="useConversation", penwidth=2]
-            whisper [label="useWhisper"]
+            whisper [label="useWhisper\n(VAD + Whisper)"]
             wllama [label="useWllama"]
             tts [label="useSpeechSynthesis"]
             audioViz [label="useAudioVisualizer"]
         }
-    
-        // WASM layer
+
+        // WASM/ONNX layer
         subgraph cluster_wasm {
-            label="[ WebAssembly Models ]"
+            label="[ WASM/ONNX Models ]"
             style=dashed
             color=black
-    
-            whisperModel [label="Whisper tiny-en\n(~31MB)"]
+
+            vadModel [label="Silero VAD v5\n(~2MB)"]
+            whisperModel [label="Whisper tiny-en\n(Transformers.js)"]
             gemmaModel [label="Gemma 270M\n(~180MB)"]
         }
-    
+
         // Browser API
-        subgraph cluster_browser {
+        subgraph cluster_apis {
             label="[ Browser APIs ]"
             style=dotted
             color=black
-    
+
             webAudio [label="Web Audio API"]
             speechSynth [label="SpeechSynthesis API"]
         }
-        
+
     }
     // Data flow
-    mic -> whisper [label="audio"]
-    whisper -> whisperModel [label="WASM"]
+    mic -> whisper [label="audio stream"]
+    whisper -> vadModel [label="detect speech"]
+    vadModel -> whisper [label="speech segments"]
+    whisper -> whisperModel [label="transcribe"]
     whisperModel -> conversation [label="transcript"]
 
     conversation -> wllama [label="prompt"]

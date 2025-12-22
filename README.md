@@ -12,7 +12,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 Ava uses a pipeline architecture with three WebAssembly-powered stages:
 
-1. **Speech Recognition** — Audio from the microphone is captured and processed by Whisper (tiny-en model) running in WASM. The `useWhisper` composable handles audio chunking and streams transcriptions every 2 seconds.
+1. **Speech Recognition** — Audio from the microphone is captured and processed through Voice Activity Detection (Silero VAD) which detects when you stop speaking. The captured speech segment is then transcribed by Whisper (tiny-en model) via Transformers.js. This approach is more natural than fixed-interval processing.
 
 2. **Language Model** — Transcribed text is passed to Gemma 3 270M via Wllama (llama.cpp WASM port). The `useConversation` composable orchestrates the flow, triggering inference when speech ends and streaming tokens back as they're generated.
 
@@ -22,13 +22,12 @@ All processing happens client-side with zero network requests after initial mode
 
 ![Architecture Diagram](public/architecture_diagram.png)
 
-![Flow Diagram](public/flow_diagram.png)
-
 ## Technical Stack
 
 | Component | Technology | Size |
 |-----------|------------|------|
-| Speech-to-Text | Whisper (whisper-web-transcriber) | ~31MB |
+| Voice Activity Detection | Silero VAD v5 (@ricky0123/vad-web) | ~2MB |
+| Speech-to-Text | Whisper tiny-en (@huggingface/transformers) | ~40MB |
 | LLM | Gemma 3 270M Instruct (Wllama) | ~180MB |
 | Text-to-Speech | Web Speech Synthesis API | Native |
 | Audio Visualization | Web Audio API | Native |
@@ -45,7 +44,7 @@ src/
 │   └── WaveformVisualizer.vue   # Real-time audio visualization
 ├── composables/
 │   ├── useConversation.ts       # Orchestrates conversation flow
-│   ├── useWhisper.ts            # Whisper WASM speech recognition
+│   ├── useWhisper.ts            # VAD + Whisper speech recognition
 │   ├── useWllama.ts             # Gemma LLM inference
 │   ├── useSpeechSynthesis.ts    # Browser TTS wrapper
 │   └── useAudioVisualizer.ts    # Web Audio frequency analysis
@@ -66,11 +65,14 @@ top_k: 40,                 // Top-k sampling
 top_p: 0.9,                // Nucleus sampling
 ```
 
-### Whisper Settings (`useWhisper.ts`)
+### VAD Settings (`useWhisper.ts`)
 
 ```typescript
-modelSize: 'tiny-en-q5_1', // Model variant (tiny/base, quantized)
-audioIntervalMs: 2000,     // Processing interval
+positiveSpeechThreshold: 0.5,  // Confidence threshold for speech detection
+negativeSpeechThreshold: 0.35, // Threshold for non-speech
+redemptionMs: 800,             // Wait time after speech ends before triggering
+minSpeechMs: 200,              // Minimum speech duration to consider
+preSpeechPadMs: 300,           // Audio to include before speech detected
 ```
 
 ### Sentence Boundary (`useWllama.ts`)
@@ -124,8 +126,8 @@ npm run preview  # Preview production build
 
 ## Performance Notes
 
-- **First load**: Downloads ~210MB of models (cached by browser)
-- **Inference**: ~0.3-0.5s for Whisper, ~1-2s for LLM response
+- **First load**: Downloads ~220MB of models (cached by browser)
+- **Inference**: VAD runs in real-time, Whisper ~0.3-0.5s, LLM ~1-2s
 - **Memory**: ~500MB-1GB RAM usage during operation
 - **WebGPU**: Not yet supported; runs on CPU via WASM SIMD
 
