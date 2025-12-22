@@ -4,6 +4,7 @@ A privacy-first AI voice assistant that runs entirely in the browser using WebAs
 
 **[Try the demo → https://ava.muthu.co](https://ava.muthu.co)**
 
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ![Screenshot](screenshot.png)
 
