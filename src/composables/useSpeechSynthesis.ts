@@ -102,7 +102,7 @@ export function useSpeechSynthesis() {
       if (event.error !== 'canceled') {
         if (event.error === 'not-allowed') {
           error.value = 'Audio playback not allowed. Please allow sound permission in browser/system settings.'
-        } else {
+        } else if(event.error !== 'interrupted'){
           error.value = `Speech error: ${event.error}`
         }
       }
@@ -164,10 +164,10 @@ export function useSpeechSynthesis() {
             error.value = 'Audio playback not allowed. Please allow sound permission in browser/system settings.'
             resolve()
             return
-          } else {
+          } else if(event.error !== 'interrupted') {
             error.value = `Speech error: ${event.error}`
           }
-          reject(new Error(error.value))
+          reject(new Error())
         } else {
           resolve()
         }
