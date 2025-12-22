@@ -99,7 +99,7 @@ export function useSpeechSynthesis() {
       if (pendingCount.value === 0) {
         isSpeaking.value = false
       }
-      if (event.error !== 'canceled' && event.error !== 'interrupted') {
+      if (event.error !== 'canceled') {
         if (event.error === 'not-allowed') {
           error.value = 'Audio playback not allowed. Please allow sound permission in browser/system settings.'
         } else {
@@ -159,7 +159,7 @@ export function useSpeechSynthesis() {
       utterance.onerror = (event) => {
         pendingCount.value--
         isSpeaking.value = false
-        if (event.error !== 'canceled' && event.error !== 'interrupted') {
+        if (event.error !== 'canceled') {
           if (event.error === 'not-allowed') {
             error.value = 'Audio playback not allowed. Please allow sound permission in browser/system settings.'
             resolve()
