@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from 'vue'
 import { WhisperTranscriber } from 'whisper-web-transcriber'
+import { getStats } from './useStats'
 
 export function useWhisper() {
   const isSupported = ref(true)
@@ -11,6 +12,7 @@ export function useWhisper() {
   const error = ref<string | null>(null)
 
   let transcriber: WhisperTranscriber | null = null
+  let sttStartTime = 0
 
   async function loadModel() {
     if (isModelLoaded.value || isLoading.value) return
@@ -24,8 +26,15 @@ export function useWhisper() {
         modelSize: 'tiny-en-q5_1', // Smallest and fastest (~31MB)
         onTranscription: (text: string) => {
           if (text.trim()) {
+            // Record STT processing time
+            if (sttStartTime > 0) {
+              const sttTime = performance.now() - sttStartTime
+              getStats().addSTTTime(sttTime)
+            }
             transcript.value = text.trim()
           }
+          // Reset timer for next transcription
+          sttStartTime = performance.now()
         },
         onProgress: (progress: number) => {
           loadProgress.value = Math.round(progress)
@@ -58,6 +67,7 @@ export function useWhisper() {
       await navigator.mediaDevices.getUserMedia({ audio: true })
       await transcriber.startRecording()
       isListening.value = true
+      sttStartTime = performance.now() // Start timing for first transcription
     } catch (e) {
       const err = e as Error
       if (err.name === 'NotAllowedError' || err.message?.includes('not-allowed')) {

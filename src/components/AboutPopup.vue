@@ -17,7 +17,7 @@ const emit = defineEmits<{
       <p class="about-desc">Meet Ava, your private AI assistant running entirely in your browser. No servers, no data leaves your device.</p>
       <div class="about-tech">
         <span>Whisper</span>
-        <span>Qwen 0.5B</span>
+        <span>Gemma 270M</span>
         <span>WebAssembly</span>
       </div>
       <div class="author-footer">

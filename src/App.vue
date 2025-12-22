@@ -25,6 +25,9 @@ const {
   isSpeaking,
   ttsError,
   frequencyData,
+  avgSTT,
+  avgLLM,
+  avgTTS,
   toggleConversation,
   initialize
 } = useConversation()
@@ -63,7 +66,7 @@ onMounted(() => {
         <span class="loading-text">{{ whisperLoadProgress }}%</span>
       </div>
       <div v-if="isLLMLoading" class="loading-container">
-        <div class="loading-label">CORTEX (Qwen 0.5B)</div>
+        <div class="loading-label">CORTEX (Gemma 270M)</div>
         <div class="loading-bar">
           <div class="loading-fill" :style="{ width: llmLoadProgress + '%' }"></div>
         </div>
@@ -122,6 +125,13 @@ onMounted(() => {
 
     <!-- About Button -->
     <button class="about-button" @click="showAbout = true">About</button>
+
+    <!-- Stats Display -->
+    <div v-if="avgSTT > 0 || avgLLM > 0 || avgTTS > 0" class="stats-display">
+      <span v-if="avgSTT > 0" class="stat-item">STT: {{ avgSTT }}ms</span>
+      <span v-if="avgLLM > 0" class="stat-item">LLM: {{ avgLLM }}ms</span>
+      <span v-if="avgTTS > 0" class="stat-item">TTS: {{ avgTTS }}ms</span>
+    </div>
 
     <!-- About Popup -->
     <AboutPopup :visible="showAbout" @close="showAbout = false" />

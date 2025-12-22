@@ -343,6 +343,27 @@ body {
   border-color: var(--primary);
 }
 
+/* Stats Display */
+.stats-display {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 101;
+}
+
+.stat-item {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', monospace;
+}
+
 /* About Popup */
 .about-overlay {
   position: fixed;

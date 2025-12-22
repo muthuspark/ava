@@ -56,7 +56,7 @@ digraph Ava {
             color=black
     
             whisperModel [label="Whisper tiny-en\n(~31MB)"]
-            qwenModel [label="Qwen 0.5B\n(~350MB)"]
+            gemmaModel [label="Gemma 270M\n(~180MB)"]
         }
     
         // Browser API
@@ -76,8 +76,8 @@ digraph Ava {
     whisperModel -> conversation [label="transcript"]
 
     conversation -> wllama [label="prompt"]
-    wllama -> qwenModel [label="WASM"]
-    qwenModel -> conversation [label="response"]
+    wllama -> gemmaModel [label="WASM"]
+    gemmaModel -> conversation [label="response"]
 
     conversation -> tts [label="sentences"]
     tts -> speechSynth [label="speak"]

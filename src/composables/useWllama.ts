@@ -6,10 +6,10 @@ const CONFIG_PATHS = {
   'multi-thread/wllama.wasm': 'https://cdn.jsdelivr.net/npm/@wllama/wllama@2.3.7/esm/multi-thread/wllama.wasm',
 }
 
-// Qwen2.5-0.5B-Instruct - Good balance of size (~350MB) and quality
+// Gemma 3 270M - Ultra fast, ~180MB
 const DEFAULT_MODEL = {
-  repo: 'Qwen/Qwen2.5-0.5B-Instruct-GGUF',
-  file: 'qwen2.5-0.5b-instruct-q4_k_m.gguf'
+  repo: 'unsloth/gemma-3-270m-it-GGUF',
+  file: 'gemma-3-270m-it-Q4_K_M.gguf'
 }
 
 // Sentence boundary pattern - matches . ! ? , followed by space or end
@@ -79,8 +79,8 @@ export function useWllama() {
           top_p: 0.9,
         },
         onNewToken: (_token, _piece, currentText) => {
-          // Strip any trailing special tokens from display
-          const cleanText = currentText.replace(/<\|im_end\|>.*$/s, '').trim()
+          // Strip any trailing special tokens from display (Gemma uses <end_of_turn>)
+          const cleanText = currentText.replace(/<end_of_turn>.*$/s, '').trim()
           response.value = cleanText
 
           // Get new content since last check
@@ -103,8 +103,8 @@ export function useWllama() {
         }
       })
 
-      // Clean final result
-      const cleanResult = result.replace(/<\|im_end\|>.*$/s, '').trim()
+      // Clean final result (Gemma uses <end_of_turn>)
+      const cleanResult = result.replace(/<end_of_turn>.*$/s, '').trim()
       response.value = cleanResult
 
       // Emit any remaining text in buffer
@@ -142,7 +142,7 @@ export function useWllama() {
           top_p: 0.9,
         },
         onNewToken: (_token, _piece, currentText) => {
-          const cleanText = currentText.replace(/<\|im_end\|>.*$/s, '').trim()
+          const cleanText = currentText.replace(/<end_of_turn>.*$/s, '').trim()
           response.value = cleanText
           if (onToken) {
             onToken(cleanText)
@@ -150,7 +150,7 @@ export function useWllama() {
         }
       })
 
-      const cleanResult = result.replace(/<\|im_end\|>.*$/s, '').trim()
+      const cleanResult = result.replace(/<end_of_turn>.*$/s, '').trim()
       response.value = cleanResult
       return cleanResult
     } catch (e) {
@@ -162,12 +162,12 @@ export function useWllama() {
   }
 
   function formatChatPrompt(userMessage: string): string {
-    // Qwen2.5-Instruct chat template (ChatML format)
-    return `<|im_start|>system
-You are Ava. Reply in 1-2 short sentences only.<|im_end|>
-<|im_start|>user
-${userMessage}<|im_end|>
-<|im_start|>assistant
+    // Gemma 3 chat template
+    return `<start_of_turn>user
+You are Ava. Reply in 1-2 short sentences only.
+
+${userMessage}<end_of_turn>
+<start_of_turn>model
 `
   }
 

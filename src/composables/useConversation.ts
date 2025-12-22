@@ -3,6 +3,7 @@ import { useWhisper } from './useWhisper'
 import { useSpeechSynthesis } from './useSpeechSynthesis'
 import { useWllama } from './useWllama'
 import { useAudioVisualizer } from './useAudioVisualizer'
+import { getStats } from './useStats'
 
 export type ConversationState = 'idle' | 'ready' | 'listening' | 'processing' | 'thinking' | 'speaking' | 'loading'
 
@@ -30,6 +31,9 @@ export function useConversation() {
   const isProcessing = ref(false)
   const isConversationActive = ref(false)
   const hasPlayedIntro = ref(false)
+
+  // Stats
+  const stats = getStats()
 
   // Whisper (Speech-to-Text)
   const {
@@ -112,13 +116,28 @@ export function useConversation() {
     stopVisualizer()
 
     // Stream LLM response and queue sentences for TTS
+    const llmStartTime = performance.now()
+    let ttsStartTime = 0
+    let firstSentence = true
+
     if (isTTSSupported.value) {
       await generateStreaming(text, (sentence: string) => {
+        if (firstSentence) {
+          ttsStartTime = performance.now()
+          firstSentence = false
+        }
         queueSentence(sentence)
       })
+      const llmEndTime = performance.now()
+      stats.addLLMTime(llmEndTime - llmStartTime)
+
       await waitForQueue()
+      if (ttsStartTime > 0) {
+        stats.addTTSTime(performance.now() - ttsStartTime)
+      }
     } else {
       await generateStreaming(text, () => {})
+      stats.addLLMTime(performance.now() - llmStartTime)
     }
 
     isProcessing.value = false
@@ -186,6 +205,11 @@ export function useConversation() {
     frequencyData,
     startVisualizer,
     stopVisualizer,
+
+    // Stats
+    avgSTT: stats.avgSTT,
+    avgLLM: stats.avgLLM,
+    avgTTS: stats.avgTTS,
 
     // Actions
     toggleConversation,

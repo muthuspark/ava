@@ -14,7 +14,7 @@ Ava uses a pipeline architecture with three WebAssembly-powered stages:
 
 1. **Speech Recognition** — Audio from the microphone is captured and processed by Whisper (tiny-en model) running in WASM. The `useWhisper` composable handles audio chunking and streams transcriptions every 2 seconds.
 
-2. **Language Model** — Transcribed text is passed to Qwen 0.5B via Wllama (llama.cpp WASM port). The `useConversation` composable orchestrates the flow, triggering inference when speech ends and streaming tokens back as they're generated.
+2. **Language Model** — Transcribed text is passed to Gemma 3 270M via Wllama (llama.cpp WASM port). The `useConversation` composable orchestrates the flow, triggering inference when speech ends and streaming tokens back as they're generated.
 
 3. **Speech Synthesis** — Generated text is split at sentence boundaries (`. ! ? ,`) and queued to the browser's native SpeechSynthesis API. This enables low-latency voice output that starts speaking before the full response is complete.
 
@@ -29,7 +29,7 @@ All processing happens client-side with zero network requests after initial mode
 | Component | Technology | Size |
 |-----------|------------|------|
 | Speech-to-Text | Whisper (whisper-web-transcriber) | ~31MB |
-| LLM | Qwen 2.5 0.5B Instruct (Wllama) | ~350MB |
+| LLM | Gemma 3 270M Instruct (Wllama) | ~180MB |
 | Text-to-Speech | Web Speech Synthesis API | Native |
 | Audio Visualization | Web Audio API | Native |
 | Frontend | Vue 3 + TypeScript | — |
@@ -46,7 +46,7 @@ src/
 ├── composables/
 │   ├── useConversation.ts       # Orchestrates conversation flow
 │   ├── useWhisper.ts            # Whisper WASM speech recognition
-│   ├── useWllama.ts             # Qwen LLM inference
+│   ├── useWllama.ts             # Gemma LLM inference
 │   ├── useSpeechSynthesis.ts    # Browser TTS wrapper
 │   └── useAudioVisualizer.ts    # Web Audio frequency analysis
 ├── styles/
@@ -124,7 +124,7 @@ npm run preview  # Preview production build
 
 ## Performance Notes
 
-- **First load**: Downloads ~380MB of models (cached by browser)
+- **First load**: Downloads ~210MB of models (cached by browser)
 - **Inference**: ~0.3-0.5s for Whisper, ~1-2s for LLM response
 - **Memory**: ~500MB-1GB RAM usage during operation
 - **WebGPU**: Not yet supported; runs on CPU via WASM SIMD
