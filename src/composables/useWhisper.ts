@@ -98,8 +98,8 @@ export function useWhisper() {
             if (text.trim()) {
               transcript.value = text.trim()
             }
-          } catch (e) {
-            console.error('Transcription error:', e)
+          } catch {
+            error.value = 'Transcription failed'
           }
         }
       })
@@ -110,7 +110,6 @@ export function useWhisper() {
       loadProgress.value = 100
       isModelLoaded.value = true
     } catch (e) {
-      console.error('Failed to load models:', e)
       error.value = e instanceof Error ? e.message : 'Failed to load speech models'
       isSupported.value = false
     } finally {

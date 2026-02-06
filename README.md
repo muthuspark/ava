@@ -47,11 +47,10 @@ src/
 │   ├── useWhisper.ts            # VAD + Whisper speech recognition
 │   ├── useWllama.ts             # Gemma LLM inference
 │   ├── useSpeechSynthesis.ts    # Browser TTS wrapper
-│   └── useAudioVisualizer.ts    # Web Audio frequency analysis
-├── styles/
-│   └── main.css                 # Global styles
-└── types/
-    └── index.ts                 # TypeScript definitions
+│   ├── useAudioVisualizer.ts    # Web Audio frequency analysis
+│   └── useStats.ts              # Performance metrics (STT/LLM/TTS)
+└── styles/
+    └── main.css                 # Global styles
 ```
 
 ## Configuration
@@ -77,9 +76,7 @@ preSpeechPadMs: 300,           // Audio to include before speech detected
 
 ### Sentence Boundary (`useWllama.ts`)
 
-```typescript
-const SENTENCE_BOUNDARY = /[.!?,](?:\s|$)/  // TTS triggers on punctuation
-```
+TTS is triggered at sentence boundaries (`. ! ? ,` followed by whitespace or end-of-string) via the `SENTENCE_BOUNDARY` regex constant in `useWllama.ts`.
 
 ## Requirements
 

@@ -26,8 +26,8 @@ export function useAudioVisualizer() {
 
       isActive.value = true
       animate()
-    } catch (e) {
-      console.error('Failed to start audio visualizer:', e)
+    } catch {
+      // Silently fail - visualizer is non-essential
     }
   }
 
