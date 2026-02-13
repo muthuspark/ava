@@ -123,8 +123,11 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- About Button -->
-    <button class="about-button" @click="showAbout = true">About</button>
+    <!-- Bottom Right Buttons -->
+    <div class="bottom-right-buttons">
+      <a class="about-button github-button" href="https://github.com/muthuspark/ava" target="_blank" rel="noopener noreferrer">&#9733; Star on GitHub</a>
+      <button class="about-button" @click="showAbout = true">About</button>
+    </div>
 
     <!-- Stats Display -->
     <div v-if="avgSTT > 0 || avgLLM > 0 || avgTTS > 0" class="stats-display">

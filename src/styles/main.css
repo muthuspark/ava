@@ -319,11 +319,17 @@ body {
   font-size: 0.9rem;
 }
 
-/* About Button */
-.about-button {
+/* Bottom Right Buttons */
+.bottom-right-buttons {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 101;
+}
+
+.about-button {
   padding: 0.5rem 1rem;
   border-radius: 999px;
   background: var(--bg-card);
@@ -335,12 +341,17 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s;
-  z-index: 101;
+  text-decoration: none;
 }
 
 .about-button:hover {
   color: var(--text);
   border-color: var(--primary);
+}
+
+.github-button:hover {
+  border-color: #e3b341;
+  color: #e3b341;
 }
 
 /* Stats Display */
