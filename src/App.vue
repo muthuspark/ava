@@ -24,6 +24,8 @@ const {
   llmError,
   isSpeaking,
   ttsError,
+  whisperBackend,
+  llmBackend,
   frequencyData,
   avgSTT,
   avgLLM,
@@ -130,7 +132,9 @@ onMounted(() => {
     </div>
 
     <!-- Stats Display -->
-    <div v-if="avgSTT > 0 || avgLLM > 0 || avgTTS > 0" class="stats-display">
+    <div v-if="whisperBackend || llmBackend || avgSTT > 0 || avgLLM > 0 || avgTTS > 0" class="stats-display">
+      <span v-if="whisperBackend" class="stat-item">Whisper: {{ whisperBackend.toUpperCase() }}</span>
+      <span v-if="llmBackend" class="stat-item">LLM: {{ llmBackend.toUpperCase() }}</span>
       <span v-if="avgSTT > 0" class="stat-item">STT: {{ avgSTT }}ms</span>
       <span v-if="avgLLM > 0" class="stat-item">LLM: {{ avgLLM }}ms</span>
       <span v-if="avgTTS > 0" class="stat-item">TTS: {{ avgTTS }}ms</span>

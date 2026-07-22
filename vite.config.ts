@@ -35,16 +35,21 @@ export default defineConfig({
     minify: 'esbuild',
     assetsDir: 'assets'
   },
+  worker: {
+    format: 'es'
+  },
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp'
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Origin-Agent-Cluster': '?1'
     }
   },
   preview: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp'
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Origin-Agent-Cluster': '?1'
     }
   },
   optimizeDeps: {

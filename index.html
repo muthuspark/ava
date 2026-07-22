@@ -17,7 +17,16 @@
   </head>
   <body>
     <div id="app"></div>
-    <script src="/coi-serviceworker.js"></script>
+    <script>
+      // Keep the COI service worker active on localhost as a fallback for
+      // browser profiles that do not apply Vite's response headers directly.
+      if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+        window.coi = { coepDegrade: () => false }
+      }
+      const isolationScript = document.createElement('script')
+      isolationScript.src = '/coi-serviceworker.js'
+      document.head.appendChild(isolationScript)
+    </script>
     <script type="module" src="/src/main.ts"></script>
 
     <!-- Google tag (gtag.js) -->

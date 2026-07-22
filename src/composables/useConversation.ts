@@ -4,6 +4,7 @@ import { useSpeechSynthesis } from './useSpeechSynthesis'
 import { useWllama } from './useWllama'
 import { useAudioVisualizer } from './useAudioVisualizer'
 import { getStats } from './useStats'
+import { useInferenceWorker } from './useInferenceWorker'
 
 export type ConversationState = 'idle' | 'ready' | 'listening' | 'processing' | 'thinking' | 'speaking' | 'loading'
 
@@ -34,6 +35,7 @@ export function useConversation() {
 
   // Stats
   const stats = getStats()
+  const { cancelAll, whisperBackend, llmBackend } = useInferenceWorker()
 
   // Whisper (Speech-to-Text)
   const {
@@ -115,43 +117,50 @@ export function useConversation() {
     stopListening()
     stopVisualizer()
 
-    // Stream LLM response and queue sentences for TTS
-    const llmStartTime = performance.now()
-    let ttsStartTime = 0
-    let firstSentence = true
+    try {
+      // Stream LLM response and queue sentences for TTS
+      const llmStartTime = performance.now()
+      let ttsStartTime = 0
+      let firstSentence = true
 
-    if (isTTSSupported.value) {
-      await generateStreaming(text, (sentence: string) => {
-        if (firstSentence) {
-          ttsStartTime = performance.now()
-          firstSentence = false
+      if (isTTSSupported.value) {
+        await generateStreaming(text, (sentence: string) => {
+          if (firstSentence) {
+            ttsStartTime = performance.now()
+            firstSentence = false
+          }
+          queueSentence(sentence)
+        })
+        stats.addLLMTime(performance.now() - llmStartTime)
+
+        await waitForQueue()
+        if (ttsStartTime > 0) {
+          stats.addTTSTime(performance.now() - ttsStartTime)
         }
-        queueSentence(sentence)
-      })
-      const llmEndTime = performance.now()
-      stats.addLLMTime(llmEndTime - llmStartTime)
-
-      await waitForQueue()
-      if (ttsStartTime > 0) {
-        stats.addTTSTime(performance.now() - ttsStartTime)
+      } else {
+        await generateStreaming(text, () => {})
+        stats.addLLMTime(performance.now() - llmStartTime)
       }
-    } else {
-      await generateStreaming(text, () => {})
-      stats.addLLMTime(performance.now() - llmStartTime)
-    }
+    } catch (e) {
+      // Cancellation is expected when the user stops or interrupts Ava.
+      if (isConversationActive.value && !(e instanceof Error && e.message === 'Inference cancelled')) {
+        llmError.value = e instanceof Error ? e.message : 'Response generation failed'
+      }
+    } finally {
+      isProcessing.value = false
 
-    isProcessing.value = false
-
-    if (isConversationActive.value) {
-      clearTranscript()
-      startListening()
-      startVisualizer()
+      if (isConversationActive.value) {
+        clearTranscript()
+        startListening()
+        startVisualizer()
+      }
     }
   })
 
   async function toggleConversation() {
     if (isConversationActive.value) {
       isConversationActive.value = false
+      cancelAll()
       stopListening()
       stopSpeaking()
       stopVisualizer()
@@ -200,6 +209,8 @@ export function useConversation() {
     // TTS
     isSpeaking,
     ttsError,
+    whisperBackend,
+    llmBackend,
 
     // Visualizer
     frequencyData,

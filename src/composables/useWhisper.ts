@@ -1,9 +1,6 @@
 import { ref, onUnmounted } from 'vue'
-import { pipeline } from '@huggingface/transformers'
 import { getStats } from './useStats'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Transcriber = (audio: Float32Array) => Promise<{ text: string }>
+import { useInferenceWorker } from './useInferenceWorker'
 
 type VADInstance = { start: () => void; pause: () => void }
 
@@ -29,46 +26,36 @@ declare global {
 
 export function useWhisper() {
   const isSupported = ref(true)
-  const isLoading = ref(false)
-  const isModelLoaded = ref(false)
+  const {
+    isLoading,
+    whisperLoadProgress: loadProgress,
+    whisperLoaded: isModelLoaded,
+    load,
+    transcribe
+  } = useInferenceWorker()
   const isListening = ref(false)
   const transcript = ref('')
-  const loadProgress = ref(0)
   const error = ref<string | null>(null)
 
   let vad: VADInstance | null = null
-  let transcriber: Transcriber | null = null
   let sttStartTime = 0
 
   async function loadModel() {
-    if (isModelLoaded.value || isLoading.value) return
+    if (isModelLoaded.value) return
 
-    isLoading.value = true
-    loadProgress.value = 0
     error.value = null
 
+    if (typeof SharedArrayBuffer === 'undefined' || !window.crossOriginIsolated) {
+      error.value = 'Whisper requires SharedArrayBuffer. Use Chrome or Edge with cross-origin isolation.'
+      isSupported.value = false
+      return
+    }
+
     try {
-      // Load Whisper model via Transformers.js
-      loadProgress.value = 10
-
-      const pipelineInstance = await (pipeline as Function)(
-        'automatic-speech-recognition',
-        'onnx-community/whisper-tiny.en',
-        {
-          dtype: 'q4',
-          progress_callback: (progressInfo: { progress?: number }) => {
-            if (progressInfo.progress) {
-              loadProgress.value = Math.round(10 + progressInfo.progress * 0.5)
-            }
-          }
-        }
-      )
-      transcriber = pipelineInstance as Transcriber
-
-      loadProgress.value = 60
-
       // Load VAD bundle (avoids CommonJS/ESM issues)
+      const inferenceLoad = load()
       const vadModule = await loadVADBundle()
+      await inferenceLoad
 
       // Initialize VAD (Voice Activity Detection)
       vad = await vadModule.MicVAD.new({
@@ -84,22 +71,21 @@ export function useWhisper() {
         },
 
         onSpeechEnd: async (audio: Float32Array) => {
-          if (!transcriber) return
-
           try {
-            const result = await transcriber(audio)
+            const text = await transcribe(audio)
 
             if (sttStartTime > 0) {
               const sttTime = performance.now() - sttStartTime
               getStats().addSTTTime(sttTime)
             }
 
-            const text = result?.text || ''
             if (text.trim()) {
               transcript.value = text.trim()
             }
-          } catch {
-            error.value = 'Transcription failed'
+          } catch (e) {
+            if (!(e instanceof Error && e.message === 'Inference cancelled')) {
+              error.value = 'Transcription failed'
+            }
           }
         }
       })
@@ -107,13 +93,8 @@ export function useWhisper() {
       // Pause VAD immediately - only start when user clicks
       if (vad) vad.pause()
 
-      loadProgress.value = 100
-      isModelLoaded.value = true
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load speech models'
-      isSupported.value = false
-    } finally {
-      isLoading.value = false
     }
   }
 

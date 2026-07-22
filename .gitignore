@@ -25,3 +25,6 @@ npm-debug.log*
 .env
 .env.local
 .env.*.local
+
+.codex
+.diffsense

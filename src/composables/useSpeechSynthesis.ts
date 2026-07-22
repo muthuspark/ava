@@ -181,7 +181,9 @@ export function useSpeechSynthesis() {
       synth.cancel()
       pendingCount.value = 0
       isSpeaking.value = false
+      const resolveQueue = onQueueEmpty
       onQueueEmpty = null
+      resolveQueue?.()
     }
   }
 
