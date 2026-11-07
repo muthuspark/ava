@@ -31,8 +31,19 @@ function emit(event: InferenceEvent) {
   self.postMessage(event)
 }
 
-function hasWebGPU(): boolean {
-  return typeof navigator !== 'undefined' && 'gpu' in navigator
+async function hasWebGPU(): Promise<boolean> {
+  if (typeof navigator === 'undefined') return false
+
+  const gpu = (navigator as Navigator & {
+    gpu?: { requestAdapter: () => Promise<unknown | null> }
+  }).gpu
+  if (!gpu) return false
+
+  try {
+    return (await gpu.requestAdapter()) != null
+  } catch {
+    return false
+  }
 }
 
 function reportProgress(model: InferenceModel, progress: number) {
@@ -42,7 +53,7 @@ function reportProgress(model: InferenceModel, progress: number) {
 async function loadWhisper() {
   reportProgress('whisper', 0)
 
-  if (hasWebGPU()) {
+  if (await hasWebGPU()) {
     try {
       transcriber = await (pipeline as Function)('automatic-speech-recognition', WHISPER_MODEL, {
         device: 'webgpu',
@@ -62,6 +73,7 @@ async function loadWhisper() {
   }
 
   transcriber = await (pipeline as Function)('automatic-speech-recognition', WHISPER_MODEL, {
+    device: 'wasm',
     dtype: 'q4',
     progress_callback: (info: { progress?: number }) => {
       if (typeof info.progress === 'number') reportProgress('whisper', info.progress)
